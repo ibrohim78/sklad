@@ -1,0 +1,19 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Yangi operatsiya</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success">Saqlash</button>
+                    <a href="{% url 'operation_list' %}" class="btn btn-secondary ms-2">Bekor qilish</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

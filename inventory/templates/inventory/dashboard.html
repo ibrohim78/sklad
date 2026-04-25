@@ -1,0 +1,158 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="row gy-4 animate-fade-in">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1 class="h3">Dashboard</h1>
+                    <p class="text-muted">Ombor holati va tezkor statistika.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'operation_create' %}" class="btn btn-success">Yangi kirim/chiqim</a>
+                    {% if user.is_authenticated and user.is_warehouse %}
+                        <a href="{% url 'product_create' %}" class="btn btn-primary">Yangi mahsulot</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Mahsulotlar</h5>
+                <p class="display-6 mb-0">{{ total_products }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Umumiy qoldiq</h5>
+                <p class="display-6 mb-0">{{ total_stock }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Kam qolgan</h5>
+                <p class="display-6 mb-0">{{ low_stock_products }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Bugungi operatsiyalar</h5>
+                <p class="display-6 mb-0">Kirim: {{ incoming_today }} / Chiqim: {{ outgoing_today }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-secondary shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Oy statistikasi</h5>
+                <p class="mb-1 text-muted">Kirim miqdori</p>
+                <p class="h4 mb-1">{{ incoming_month_qty }}</p>
+                <p class="mb-0 text-muted">Chiqim miqdori: {{ outgoing_month_qty }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">So‘nggi operatsiyalar</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mahsulot</th>
+                                <th>Tur</th>
+                                <th>Miqdor</th>
+                                <th>Foydalanuvchi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for op in recent_operations %}
+                            <tr>
+                                <td>{{ op.product.name }}</td>
+                                <td>{{ op.get_operation_type_display }}</td>
+                                <td>{{ op.quantity }}</td>
+                                <td>{{ op.user }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4">Hali operatsiyalar mavjud emas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Top kategoriyalar</h5>
+                <ul class="list-group list-group-flush">
+                    {% for category in top_categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ category.name }}
+                            <span class="badge bg-primary rounded-pill">{{ category.item_count }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Kategoriya topilmadi.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h5 class="card-title mb-0">Kategoriya bo‘yicha mahsulotlar taqsimoti</h5>
+                        <p class="text-muted mb-0">Har bir kategoriya uchun mahsulot soni.</p>
+                    </div>
+                </div>
+                <div class="chart-container" style="min-height: 320px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const catLabels = [{% for item in category_stats %}'{{ item.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const catData = [{% for item in category_stats %}{{ item.item_count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+    const ctx = document.getElementById('categoryChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    label: 'Mahsulotlar soni',
+                    data: catData,
+                    backgroundColor: [
+                        '#2563eb', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6', '#f97316', '#22c55e', '#0284c7'
+                    ],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#334155', padding: 16 } },
+                    tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.raw; } } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

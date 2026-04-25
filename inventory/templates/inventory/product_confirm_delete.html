@@ -1,0 +1,20 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Mahsulotni o‘chirish</h4>
+                <p>Quyidagi mahsulotni o‘chirmoqchimisiz?</p>
+                <p><strong>{{ object.name }}</strong></p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Ha, o‘chirish</button>
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary ms-2">Bekor qilish</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
